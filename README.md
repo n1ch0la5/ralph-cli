@@ -1,4 +1,4 @@
-# ralph
+# Ralph CLI
 
 Iterative AI-assisted feature development. A thin CLI wrapper around `claude -p` that breaks features into tasks and executes them one at a time.
 
@@ -18,19 +18,26 @@ Planning/features/my-feature/
 
 ## Install
 
-**Clone + PATH (simplest):**
+**Homebrew (recommended):**
 
 ```bash
-git clone https://github.com/youruser/ralph.git ~/Apps/cli/ralph
-echo 'export PATH="$HOME/Apps/cli/ralph/bin:$PATH"' >> ~/.zshrc
+brew tap n1ch0la5/tap
+brew install ralph-cli
+```
+
+**Clone + PATH:**
+
+```bash
+git clone https://github.com/n1ch0la5/ralph-cli.git ~/.ralph-cli
+echo 'export PATH="$HOME/.ralph-cli/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
 **Or with Make:**
 
 ```bash
-git clone https://github.com/youruser/ralph.git /tmp/ralph
-cd /tmp/ralph && make install
+git clone https://github.com/n1ch0la5/ralph-cli.git /tmp/ralph-cli
+cd /tmp/ralph-cli && make install
 ```
 
 ## Quick Start
@@ -165,7 +172,7 @@ Project-wide rules belong in your `CLAUDE.md` (or equivalent). Ralph's default t
 ## Requirements
 
 - bash 4+
-- `claude` CLI (Claude Code) installed and in PATH
+- `claude` CLI ([Claude Code](https://docs.anthropic.com/en/docs/claude-code)) installed and in PATH
 
 ## License
 
