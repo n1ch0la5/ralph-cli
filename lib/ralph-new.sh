@@ -87,15 +87,17 @@ Once we're aligned, generate:
 2. $FEATURE_DIR_REL/$RALPH_PLAN_FILE
 
 Task sizing rules:
-- Each task = one ralph iteration = one claude -p invocation
-- Aim for 3-8 tasks total. A simple feature should be 2-3 tasks. A complex feature should be 5-8.
-- Each task should produce a meaningful, testable unit of work (not a single line change)
-- Group related changes into one task (e.g., 'add model + service + view for X' is one task, not three)
+- Each task section = one ralph iteration = one full claude -p invocation (expensive!)
+- Fewer, bigger tasks are better than many small ones. Don't create a task for a trivial change.
+- Each task should touch multiple files or make a meaningful, testable chunk of progress
+- Group related changes together (e.g., 'add model + service + view for X' is one task, not three)
+- A single-file feature might be 1-2 tasks. A multi-system feature might be 5-10.
 - Use checkbox format within each task for sub-steps:
 
 ## Task 1: Short description
 - [ ] Sub-step A
-- [ ] Sub-step B"
+- [ ] Sub-step B
+- [ ] Sub-step C"
 
 # Check for reference images
 REF_DIR="$FEATURE_PATH/references"
