@@ -16,22 +16,27 @@ if [[ -n "$FEATURE" ]]; then
     exit 1
   fi
 
-  REMAINING=0
-  COMPLETED=0
+  SECTIONS_TOTAL=0
+  SECTIONS_REMAINING=0
+  STEPS_COMPLETED=0
+  STEPS_REMAINING=0
 
   if [[ -f "$PLAN" ]]; then
-    REMAINING=$(ralph_count_remaining "$PLAN")
-    COMPLETED=$(ralph_count_completed "$PLAN")
+    SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
+    SECTIONS_REMAINING=$(ralph_count_sections_remaining "$PLAN")
+    STEPS_COMPLETED=$(ralph_count_completed "$PLAN")
+    STEPS_REMAINING=$(ralph_count_remaining "$PLAN")
   fi
 
-  TOTAL=$((COMPLETED + REMAINING))
+  SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
+  STEPS_TOTAL=$((STEPS_COMPLETED + STEPS_REMAINING))
 
   # Determine status
-  if [[ $TOTAL -eq 0 ]]; then
+  if [[ $SECTIONS_TOTAL -eq 0 ]]; then
     STATUS="No Tasks"
-  elif [[ $REMAINING -eq 0 ]]; then
+  elif [[ $SECTIONS_REMAINING -eq 0 ]]; then
     STATUS="Complete"
-  elif [[ $COMPLETED -eq 0 ]]; then
+  elif [[ $SECTIONS_DONE -eq 0 ]]; then
     STATUS="Not Started"
   else
     STATUS="In Progress"
@@ -41,15 +46,41 @@ if [[ -n "$FEATURE" ]]; then
   echo "Status:  $STATUS"
   echo ""
 
-  if [[ $TOTAL -gt 0 ]]; then
-    echo "Tasks: $COMPLETED/$TOTAL completed ($((COMPLETED * 100 / TOTAL))%)"
+  if [[ $SECTIONS_TOTAL -gt 0 ]]; then
+    echo "Sections:  $SECTIONS_DONE/$SECTIONS_TOTAL completed  (each section = 1 ralph iteration)"
+    if [[ $STEPS_TOTAL -gt 0 ]]; then
+      echo "Steps:     $STEPS_COMPLETED/$STEPS_TOTAL checkboxes ($((STEPS_COMPLETED * 100 / STEPS_TOTAL))%)"
+    fi
     echo ""
 
-    # Print individual tasks
+    # Print task sections with their status
     if [[ -f "$PLAN" ]]; then
-      grep -E "^\- \[(x| )\]" "$PLAN" | while IFS= read -r line; do
-        echo "  $line"
-      done
+      current_section=""
+      section_done=true
+      while IFS= read -r line; do
+        if [[ "$line" =~ ^##\ Task ]]; then
+          # Print previous section before starting a new one
+          if [[ -n "$current_section" ]]; then
+            if [[ "$section_done" == true ]]; then
+              echo "  ✓ $current_section"
+            else
+              echo "  ○ $current_section"
+            fi
+          fi
+          current_section="$line"
+          section_done=true
+        elif [[ "$line" =~ ^-\ \[\ \] ]]; then
+          section_done=false
+        fi
+      done < "$PLAN"
+      # Print last section
+      if [[ -n "$current_section" ]]; then
+        if [[ "$section_done" == true ]]; then
+          echo "  ✓ $current_section"
+        else
+          echo "  ○ $current_section"
+        fi
+      fi
     fi
 
     echo ""
@@ -96,29 +127,29 @@ for dir in "$FEATURE_DIR"/*/; do
   name="$(basename "$dir")"
   plan="$dir/$RALPH_PLAN_FILE"
 
-  completed=0
-  remaining=0
+  sec_total=0
+  sec_remaining=0
 
   if [[ -f "$plan" ]]; then
-    completed=$(ralph_count_completed "$plan")
-    remaining=$(ralph_count_remaining "$plan")
+    sec_total=$(ralph_count_sections_total "$plan")
+    sec_remaining=$(ralph_count_sections_remaining "$plan")
   fi
 
-  total=$((completed + remaining))
+  sec_done=$((sec_total - sec_remaining))
 
-  if [[ $total -eq 0 ]]; then
+  if [[ $sec_total -eq 0 ]]; then
     pct_label="no tasks"
     bar="$(ralph_progress_bar 0 1 20)"
-  elif [[ $remaining -eq 0 ]]; then
+  elif [[ $sec_remaining -eq 0 ]]; then
     pct_label="done"
-    bar="$(ralph_progress_bar "$total" "$total" 20)"
+    bar="$(ralph_progress_bar "$sec_total" "$sec_total" 20)"
   else
-    pct="$((completed * 100 / total))"
+    pct="$((sec_done * 100 / sec_total))"
     pct_label="${pct}%"
-    bar="$(ralph_progress_bar "$completed" "$total" 20)"
+    bar="$(ralph_progress_bar "$sec_done" "$sec_total" 20)"
   fi
 
-  printf "  %-24s %2d/%-2d %s %s\n" "$name" "$completed" "$total" "$bar" "$pct_label"
+  printf "  %-24s %2d/%-2d %s %s\n" "$name" "$sec_done" "$sec_total" "$bar" "$pct_label"
 done
 
 if [[ "$HAS_FEATURES" != true ]]; then

@@ -49,18 +49,18 @@ ralph_require_file "$PLAN" "$RALPH_PLAN_FILE"
 ralph_require_file "$SPEC" "$RALPH_SPEC_FILE"
 ralph_require_file "$PROMPT" "$RALPH_PROMPT_FILE"
 
-# Check for remaining tasks
-REMAINING=$(ralph_count_remaining "$PLAN")
-if [[ "$REMAINING" -eq 0 ]]; then
+# Check for remaining task sections
+SECTIONS_REMAINING=$(ralph_count_sections_remaining "$PLAN")
+if [[ "$SECTIONS_REMAINING" -eq 0 ]]; then
   echo "All tasks complete for '$FEATURE'."
   exit 0
 fi
 
-COMPLETED=$(ralph_count_completed "$PLAN")
-TOTAL=$((COMPLETED + REMAINING))
+SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
+SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
 
 echo "Ralph v$RALPH_VERSION — running feature: $FEATURE"
-echo "Plan: $COMPLETED/$TOTAL tasks completed, $REMAINING remaining"
+echo "Plan: $SECTIONS_DONE/$SECTIONS_TOTAL task sections completed, $SECTIONS_REMAINING remaining"
 echo "Max iterations: $MAX_ITER"
 echo ""
 
@@ -83,17 +83,17 @@ fi
 
 # Main loop
 for ((i=1; i<=MAX_ITER; i++)); do
-  REMAINING=$(ralph_count_remaining "$PLAN")
-  if [[ "$REMAINING" -eq 0 ]]; then
+  SECTIONS_REMAINING=$(ralph_count_sections_remaining "$PLAN")
+  if [[ "$SECTIONS_REMAINING" -eq 0 ]]; then
     echo ""
     echo "All tasks complete!"
     break
   fi
 
-  COMPLETED=$(ralph_count_completed "$PLAN")
-  TOTAL=$((COMPLETED + REMAINING))
+  SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
+  SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
 
-  echo "=== Iteration $i — Task $((COMPLETED + 1))/$TOTAL — $REMAINING remaining ==="
+  echo "=== Iteration $i — Section $((SECTIONS_DONE + 1))/$SECTIONS_TOTAL — $SECTIONS_REMAINING remaining ==="
 
   # Execute claude (re-read prompt each time so mid-run edits take effect)
   claude -p "$(cat "$PROMPT")" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
@@ -114,13 +114,13 @@ done
 
 # Final status
 echo ""
-REMAINING=$(ralph_count_remaining "$PLAN")
-COMPLETED=$(ralph_count_completed "$PLAN")
-TOTAL=$((COMPLETED + REMAINING))
+SECTIONS_REMAINING=$(ralph_count_sections_remaining "$PLAN")
+SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
+SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
 
-if [[ "$REMAINING" -eq 0 ]]; then
-  echo "Done — $TOTAL/$TOTAL tasks completed."
+if [[ "$SECTIONS_REMAINING" -eq 0 ]]; then
+  echo "Done — $SECTIONS_TOTAL/$SECTIONS_TOTAL task sections completed."
 else
-  echo "Stopped after $MAX_ITER iterations — $COMPLETED/$TOTAL tasks completed, $REMAINING remaining."
+  echo "Stopped after $MAX_ITER iterations — $SECTIONS_DONE/$SECTIONS_TOTAL sections completed, $SECTIONS_REMAINING remaining."
   exit 1
 fi

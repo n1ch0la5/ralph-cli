@@ -72,17 +72,51 @@ ralph_require_file() {
   fi
 }
 
-# Count unchecked tasks in a plan file
+# Count unchecked checkboxes in a plan file
 ralph_count_remaining() {
   local count
   count=$(grep -c "^\- \[ \]" "$1" 2>/dev/null) || true
   echo "${count:-0}"
 }
 
-# Count completed tasks in a plan file
+# Count completed checkboxes in a plan file
 ralph_count_completed() {
   local count
   count=$(grep -c "^\- \[x\]" "$1" 2>/dev/null) || true
+  echo "${count:-0}"
+}
+
+# Count task sections that still have unchecked items (## Task headers with remaining work)
+ralph_count_sections_remaining() {
+  local plan="$1"
+  local count=0
+  local in_section=false
+  local section_has_unchecked=false
+
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^##\ Task ]]; then
+      if [[ "$section_has_unchecked" == true ]]; then
+        ((count++))
+      fi
+      in_section=true
+      section_has_unchecked=false
+    elif [[ "$in_section" == true ]] && [[ "$line" =~ ^-\ \[\ \] ]]; then
+      section_has_unchecked=true
+    fi
+  done < "$plan"
+
+  # Count the last section
+  if [[ "$section_has_unchecked" == true ]]; then
+    ((count++))
+  fi
+
+  echo "$count"
+}
+
+# Count total task sections (## Task headers)
+ralph_count_sections_total() {
+  local count
+  count=$(grep -c "^## Task" "$1" 2>/dev/null) || true
   echo "${count:-0}"
 }
 

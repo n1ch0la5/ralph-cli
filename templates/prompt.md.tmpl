@@ -7,14 +7,14 @@ You are implementing a feature for this project.
 4. If a `{{FEATURE_DIR}}/references/` directory exists with images, examine them for design guidance
 
 ## Then:
-1. Find the first unchecked task (marked `- [ ]`)
-2. Implement ONLY that task
+1. Find the first task section (## Task N) that still has unchecked items (`- [ ]`)
+2. Complete ALL checkboxes within that task section
 3. Follow existing patterns in the codebase
-4. Mark the task complete (change `- [ ]` to `- [x]`) in {{PLAN_FILE}}
+4. Mark every completed checkbox `- [x]` in {{PLAN_FILE}}
 5. Commit with message: `{{COMMIT_PREFIX}} <brief task description>`
 
 ## Rules:
-- ONE task per iteration. Stop after completing one.
-- If blocked or unclear, add a `// TODO: CLARIFY - ` comment and move to the next task.
+- Complete ONE task section per iteration (all its checkboxes), then stop.
+- If blocked on a checkbox, add a `// TODO: CLARIFY - ` comment, mark it `- [x]`, and continue to the next checkbox in the same section.
 - Follow project conventions found in CLAUDE.md or equivalent.
-- Do not modify files unrelated to the current task.
+- Do not modify files unrelated to the current task section.
