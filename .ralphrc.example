@@ -1,0 +1,43 @@
+# .ralphrc — Ralph configuration
+# Place this file in your project root. All values are optional.
+# This file is sourced as shell script — use key=value format.
+
+# Directory where feature plans are stored (relative to project root)
+# RALPH_FEATURE_DIR="Planning/features"
+
+# Tools Claude is allowed to use during execution
+# RALPH_ALLOWED_TOOLS="Edit,Write,Bash,Read,Glob,Grep"
+
+# Additional flags passed to every `claude -p` invocation
+# Example: --model opus --max-budget-usd 5
+# RALPH_CLAUDE_FLAGS=""
+
+# Permission mode for claude invocations
+# Options: acceptEdits, bypassPermissions, default, plan
+# RALPH_PERMISSION_MODE=""
+
+# Maximum iterations before ralph gives up
+# RALPH_MAX_ITERATIONS=20
+
+# Seconds to sleep between iterations
+# RALPH_SLEEP_SECONDS=2
+
+# Whether prompts should include git commit instructions
+# RALPH_GIT_COMMIT=true
+
+# Git commit message prefix ({{FEATURE}} is replaced with feature name)
+# RALPH_COMMIT_PREFIX="[{{FEATURE}}]"
+
+# Path to a custom prompt template (relative to project root)
+# If empty, uses ralph's built-in default template
+# RALPH_PROMPT_TEMPLATE=""
+
+# Path to MCP server config JSON (relative to project root)
+# Passed as --mcp-config to claude. Use for project-specific MCP servers.
+# Example: .mcp.json
+# RALPH_MCP_CONFIG=""
+
+# Filenames within each feature directory (rarely need to change)
+# RALPH_PLAN_FILE="implementation-plan.md"
+# RALPH_SPEC_FILE="spec.md"
+# RALPH_PROMPT_FILE="prompt.md"

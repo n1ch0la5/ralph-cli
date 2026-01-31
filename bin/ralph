@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+RALPH_VERSION="0.1.0"
+RALPH_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+source "$RALPH_ROOT/lib/ralph-common.sh"
+
+case "${1:-help}" in
+  init)       shift; source "$RALPH_ROOT/lib/ralph-init.sh" "$@" ;;
+  new)        shift; source "$RALPH_ROOT/lib/ralph-new.sh" "$@" ;;
+  run)        shift; source "$RALPH_ROOT/lib/ralph-run.sh" "$@" ;;
+  plan)       shift; source "$RALPH_ROOT/lib/ralph-plan.sh" "$@" ;;
+  status)     shift; source "$RALPH_ROOT/lib/ralph-status.sh" "$@" ;;
+  version|--version|-v)
+    echo "ralph $RALPH_VERSION" ;;
+  help|--help|-h)
+    ralph_usage ;;
+  *)
+    echo "Unknown command: $1"
+    echo ""
+    ralph_usage
+    exit 1 ;;
+esac
