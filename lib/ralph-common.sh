@@ -74,12 +74,16 @@ ralph_require_file() {
 
 # Count unchecked tasks in a plan file
 ralph_count_remaining() {
-  grep -c "^\- \[ \]" "$1" 2>/dev/null || echo "0"
+  local count
+  count=$(grep -c "^\- \[ \]" "$1" 2>/dev/null) || true
+  echo "${count:-0}"
 }
 
 # Count completed tasks in a plan file
 ralph_count_completed() {
-  grep -c "^\- \[x\]" "$1" 2>/dev/null || echo "0"
+  local count
+  count=$(grep -c "^\- \[x\]" "$1" 2>/dev/null) || true
+  echo "${count:-0}"
 }
 
 # Render a template by substituting {{VAR}} placeholders
