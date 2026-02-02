@@ -59,6 +59,10 @@ fi
 SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
 SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
 
+LOGS_DIR="$FEATURE_PATH/logs"
+ACTION_ITEMS="$FEATURE_PATH/action-items.md"
+mkdir -p "$LOGS_DIR"
+
 echo "Ralph v$RALPH_VERSION — running feature: $FEATURE"
 echo "Plan: $SECTIONS_DONE/$SECTIONS_TOTAL task sections completed, $SECTIONS_REMAINING remaining"
 echo "Max iterations: $MAX_ITER"
@@ -93,13 +97,18 @@ for ((i=1; i<=MAX_ITER; i++)); do
   SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
   SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
 
-  echo "=== Iteration $i — Section $((SECTIONS_DONE + 1))/$SECTIONS_TOTAL — $SECTIONS_REMAINING remaining ==="
+  CURRENT_SECTION=$((SECTIONS_DONE + 1))
+  LOG_FILE="$LOGS_DIR/section-${CURRENT_SECTION}.md"
+
+  echo "=== Iteration $i — Section $CURRENT_SECTION/$SECTIONS_TOTAL — $SECTIONS_REMAINING remaining ==="
 
   # Execute claude (re-read prompt each time so mid-run edits take effect)
+  # Output is tee'd to a log file for later reference
   claude -p "$(cat "$PROMPT")" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
     ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
-    ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"}
-  EXIT_CODE=$?
+    ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} \
+    | tee "$LOG_FILE"
+  EXIT_CODE=${PIPESTATUS[0]}
 
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo ""
@@ -122,5 +131,48 @@ if [[ "$SECTIONS_REMAINING" -eq 0 ]]; then
   echo "Done — $SECTIONS_TOTAL/$SECTIONS_TOTAL task sections completed."
 else
   echo "Stopped after $MAX_ITER iterations — $SECTIONS_DONE/$SECTIONS_TOTAL sections completed, $SECTIONS_REMAINING remaining."
+fi
+
+echo "Logs saved to: $RALPH_FEATURE_DIR/$FEATURE/logs/"
+
+# Display action items and generate clipboard-ready prompt
+if [[ -f "$ACTION_ITEMS" ]] && [[ -s "$ACTION_ITEMS" ]]; then
+  echo ""
+  echo "========================================"
+  echo "ACTION ITEMS — manual steps required:"
+  echo "========================================"
+  cat "$ACTION_ITEMS"
+  echo "========================================"
+
+  # Build a clipboard-ready prompt for pasting into Claude
+  FEATURE_DIR_REL="$RALPH_FEATURE_DIR/$FEATURE"
+  FOLLOWUP_PROMPT="I just used ralph to implement the '$FEATURE' feature. Before we continue, read these files for context:
+- $FEATURE_DIR_REL/$RALPH_SPEC_FILE (feature requirements)
+- $FEATURE_DIR_REL/$RALPH_PLAN_FILE (implementation plan — check completed vs remaining tasks)
+
+The following manual steps are still needed:
+
+$(cat "$ACTION_ITEMS")
+
+Help me work through these action items. For each one:
+1. Tell me exactly what to do (commands, file edits, etc.)
+2. Verify it worked
+3. Flag any issues"
+
+  # Always save to file so it survives clipboard overwrites
+  FOLLOWUP_FILE="$FEATURE_PATH/followup-prompt.md"
+  echo "$FOLLOWUP_PROMPT" > "$FOLLOWUP_FILE"
+
+  echo ""
+  if ralph_copy_to_clipboard "$FOLLOWUP_PROMPT"; then
+    echo "Follow-up prompt copied to clipboard — paste into Claude to work through action items."
+  fi
+  echo "Saved to: $RALPH_FEATURE_DIR/$FEATURE/followup-prompt.md"
+else
+  echo ""
+  echo "No manual action items — all done."
+fi
+
+if [[ "$SECTIONS_REMAINING" -gt 0 ]]; then
   exit 1
 fi

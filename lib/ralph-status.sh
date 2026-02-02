@@ -86,9 +86,19 @@ if [[ -n "$FEATURE" ]]; then
     echo ""
   fi
 
+  # Show action items if they exist
+  ACTION_ITEMS="$FEATURE_PATH/action-items.md"
+  if [[ -f "$ACTION_ITEMS" ]] && [[ -s "$ACTION_ITEMS" ]]; then
+    echo "Action items:"
+    while IFS= read -r line; do
+      echo "  $line"
+    done < "$ACTION_ITEMS"
+    echo ""
+  fi
+
   # Check which files exist
   echo "Files:"
-  for fname in "$RALPH_SPEC_FILE" "$RALPH_PLAN_FILE" "$RALPH_PROMPT_FILE"; do
+  for fname in "$RALPH_SPEC_FILE" "$RALPH_PLAN_FILE" "$RALPH_PROMPT_FILE" "action-items.md"; do
     if [[ -f "$FEATURE_PATH/$fname" ]]; then
       printf "  %-30s ✓\n" "$fname"
     else
@@ -102,6 +112,15 @@ if [[ -n "$FEATURE" ]]; then
     REF_COUNT=$(find "$REF_DIR" -type f 2>/dev/null | wc -l | tr -d ' ')
     if [[ "$REF_COUNT" -gt 0 ]]; then
       printf "  %-30s %s file(s)\n" "references/" "$REF_COUNT"
+    fi
+  fi
+
+  # Check for logs
+  LOGS_DIR="$FEATURE_PATH/logs"
+  if [[ -d "$LOGS_DIR" ]]; then
+    LOG_COUNT=$(find "$LOGS_DIR" -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
+    if [[ "$LOG_COUNT" -gt 0 ]]; then
+      printf "  %-30s %s file(s)\n" "logs/" "$LOG_COUNT"
     fi
   fi
 

@@ -18,3 +18,15 @@ You are implementing a feature for this project.
 - If blocked on a checkbox, add a `// TODO: CLARIFY - ` comment, mark it `- [x]`, and continue to the next checkbox in the same section.
 - Follow project conventions found in CLAUDE.md or equivalent.
 - Do not modify files unrelated to the current task section.
+
+## Action items:
+If completing this task requires ANY manual steps after implementation — running migrations, installing dependencies, resetting databases, updating environment variables, running build/seed commands, restarting services, etc. — you MUST append them to `{{FEATURE_DIR}}/action-items.md`.
+
+Format (append, never overwrite):
+```
+## Task N: <task description>
+- [ ] `command to run` — why it's needed
+- [ ] Manual step description — why it's needed
+```
+
+Only write action items that require human intervention. Do not include steps you already completed.
