@@ -1,0 +1,1 @@
+Add git worktree support to ralph to enable isolated feature development. When using --worktree flag with ralph new, create a git worktree with a conventional branch name (feat/, fix/, etc.) so feature work doesn't pollute the main branch. Include a ralph worktree delete command for cleanup.

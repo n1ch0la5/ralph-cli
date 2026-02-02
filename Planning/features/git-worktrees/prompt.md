@@ -1,0 +1,32 @@
+You are implementing a feature for this project.
+
+## First, study these files:
+1. Read `CLAUDE.md` (or equivalent project docs) for repo conventions
+2. Read `Planning/features/git-worktrees/spec.md` for requirements
+3. Read `Planning/features/git-worktrees/implementation-plan.md` for tasks
+4. If a `Planning/features/git-worktrees/references/` directory exists with images, examine them for design guidance
+
+## Then:
+1. Find the first task section (## Task N) that still has unchecked items (`- [ ]`)
+2. Complete ALL checkboxes within that task section
+3. Follow existing patterns in the codebase
+4. Mark every completed checkbox `- [x]` in implementation-plan.md
+5. Commit with message: `[git-worktrees] <brief task description>`
+
+## Rules:
+- Complete ONE task section per iteration (all its checkboxes), then stop.
+- If blocked on a checkbox, add a `// TODO: CLARIFY - ` comment, mark it `- [x]`, and continue to the next checkbox in the same section.
+- Follow project conventions found in CLAUDE.md or equivalent.
+- Do not modify files unrelated to the current task section.
+
+## Action items:
+If completing this task requires ANY manual steps after implementation — running migrations, installing dependencies, resetting databases, updating environment variables, running build/seed commands, restarting services, etc. — you MUST append them to `Planning/features/git-worktrees/action-items.md`.
+
+Format (append, never overwrite):
+```
+## Task N: <task description>
+- [ ] `command to run` — why it's needed
+- [ ] Manual step description — why it's needed
+```
+
+Only write action items that require human intervention. Do not include steps you already completed.
