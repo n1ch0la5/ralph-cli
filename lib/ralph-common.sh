@@ -245,3 +245,22 @@ ralph_resolve_branch_name() {
   local type="${2:-feat}"
   echo "$type/$feature"
 }
+
+# Check if a worktree has uncommitted changes
+ralph_worktree_has_changes() {
+  local worktree_path="$1"
+  local status
+  status=$(git -C "$worktree_path" status --porcelain 2>/dev/null)
+  [[ -n "$status" ]]
+}
+
+# Find the branch name for a worktree path
+ralph_find_worktree_branch() {
+  local worktree_path="$1"
+  # git worktree list --porcelain gives us structured output
+  # Format: worktree <path>\nHEAD <sha>\nbranch <ref>\n\n
+  git worktree list --porcelain | awk -v path="$worktree_path" '
+    /^worktree / { current_path = substr($0, 10) }
+    /^branch / && current_path == path { print substr($0, 8); exit }
+  ' | sed 's@^refs/heads/@@'
+}

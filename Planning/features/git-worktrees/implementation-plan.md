@@ -27,12 +27,12 @@ Add worktree configuration, helper functions, and implement the `--worktree` fla
 
 Create the worktree delete command with `--with-branch`, `--force`, and `--dry-run` flags.
 
-- [ ] Add case for `worktree` in `bin/ralph` dispatch (routes to `lib/ralph-worktree.sh`)
-- [ ] Create `lib/ralph-worktree.sh` with subcommand dispatch (currently only `delete`)
-- [ ] Implement argument parsing for `delete` subcommand: feature name, `--with-branch`, `--force`, `--dry-run`
-- [ ] Add helper function `ralph_worktree_has_changes()` in `lib/ralph-common.sh` to check for uncommitted changes
-- [ ] Add helper function `ralph_find_worktree_branch()` in `lib/ralph-common.sh` to find branch name for a worktree path
-- [ ] Implement delete logic:
+- [x] Add case for `worktree` in `bin/ralph` dispatch (routes to `lib/ralph-worktree.sh`)
+- [x] Create `lib/ralph-worktree.sh` with subcommand dispatch (currently only `delete`)
+- [x] Implement argument parsing for `delete` subcommand: feature name, `--with-branch`, `--force`, `--dry-run`
+- [x] Add helper function `ralph_worktree_has_changes()` in `lib/ralph-common.sh` to check for uncommitted changes
+- [x] Add helper function `ralph_find_worktree_branch()` in `lib/ralph-common.sh` to find branch name for a worktree path
+- [x] Implement delete logic:
   - Resolve worktree path from feature name
   - Check worktree exists
   - Check for uncommitted changes (error without `--force`)
@@ -40,5 +40,5 @@ Create the worktree delete command with `--with-branch`, `--force`, and `--dry-r
   - Run `git worktree remove <path>` (with `--force` if specified)
   - If `--with-branch`: run `git branch -d <branch>` (or `-D` if `--force`)
   - Print confirmation
-- [ ] Add help text for `ralph worktree delete`
-- [ ] Update `Makefile` to install `lib/ralph-worktree.sh`
+- [x] Add help text for `ralph worktree delete`
+- [x] Update `Makefile` to install `lib/ralph-worktree.sh` (not needed - Makefile uses `cp lib/*.sh` wildcard)
