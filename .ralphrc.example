@@ -41,3 +41,8 @@
 # RALPH_PLAN_FILE="implementation-plan.md"
 # RALPH_SPEC_FILE="spec.md"
 # RALPH_PROMPT_FILE="prompt.md"
+
+# Base directory for worktrees created with --worktree flag
+# Can be relative (to project root) or absolute path
+# Worktrees are created at: <base>/<repo-name>/<feature>
+# RALPH_WORKTREE_BASE="../worktrees"

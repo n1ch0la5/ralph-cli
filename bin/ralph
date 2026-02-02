@@ -12,6 +12,7 @@ case "${1:-help}" in
   run)        shift; source "$RALPH_ROOT/lib/ralph-run.sh" "$@" ;;
   plan)       shift; source "$RALPH_ROOT/lib/ralph-plan.sh" "$@" ;;
   status)     shift; source "$RALPH_ROOT/lib/ralph-status.sh" "$@" ;;
+  worktree)   shift; source "$RALPH_ROOT/lib/ralph-worktree.sh" "$@" ;;
   version|--version|-v)
     echo "ralph $RALPH_VERSION" ;;
   help|--help|-h)

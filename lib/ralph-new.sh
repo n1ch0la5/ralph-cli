@@ -6,6 +6,12 @@ ralph_load_config
 FEATURE_NAME=""
 DESCRIPTION=""
 NO_CLIPBOARD=false
+USE_WORKTREE=false
+BASE_BRANCH=""
+BRANCH_TYPE="feat"
+
+# Valid branch types
+VALID_TYPES="feat fix chore hotfix release"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -16,8 +22,31 @@ while [[ $# -gt 0 ]]; do
     --no-clipboard)
       NO_CLIPBOARD=true
       shift ;;
+    --worktree)
+      USE_WORKTREE=true
+      shift ;;
+    --base)
+      BASE_BRANCH="$2"
+      shift 2 ;;
+    --type)
+      BRANCH_TYPE="$2"
+      shift 2 ;;
     --help|-h)
-      echo "Usage: ralph new [name] [--description \"...\"] [--no-clipboard]"
+      cat <<EOF
+Usage: ralph new [name] [options]
+
+Options:
+  --description "..."   Feature description (interactive if omitted)
+  --no-clipboard        Don't copy planning prompt to clipboard
+  --worktree            Create feature in a new git worktree
+  --base <branch>       Base branch for worktree (default: auto-detect)
+  --type <prefix>       Branch prefix: feat, fix, chore, hotfix, release (default: feat)
+
+Examples:
+  ralph new my-feature
+  ralph new my-feature --worktree
+  ralph new my-feature --worktree --type fix --base develop
+EOF
       exit 0 ;;
     -*)
       echo "Unknown option: $1"
@@ -35,7 +64,74 @@ fi
 
 ralph_validate_name "$FEATURE_NAME"
 
-FEATURE_PATH="$(ralph_feature_path "$FEATURE_NAME")"
+# Validate branch type
+if [[ "$USE_WORKTREE" == true ]]; then
+  if [[ ! " $VALID_TYPES " =~ " $BRANCH_TYPE " ]]; then
+    echo "Error: Invalid branch type '$BRANCH_TYPE'"
+    echo "Valid types: $VALID_TYPES"
+    exit 1
+  fi
+fi
+
+# Worktree setup
+WORKTREE_PATH=""
+WORKTREE_BRANCH=""
+ORIGINAL_PROJECT_ROOT="$RALPH_PROJECT_ROOT"
+
+if [[ "$USE_WORKTREE" == true ]]; then
+  # Check we're in a git repository
+  if ! git rev-parse --git-dir &>/dev/null; then
+    echo "Error: Not in a git repository"
+    exit 1
+  fi
+
+  # Determine base branch
+  if [[ -z "$BASE_BRANCH" ]]; then
+    BASE_BRANCH="$(ralph_get_default_branch)"
+    if [[ -z "$BASE_BRANCH" ]]; then
+      echo "Error: Could not detect default branch. Use --base to specify."
+      exit 1
+    fi
+  fi
+
+  # Verify base branch exists
+  if ! git show-ref --verify --quiet "refs/heads/$BASE_BRANCH" 2>/dev/null; then
+    echo "Error: Base branch '$BASE_BRANCH' does not exist"
+    exit 1
+  fi
+
+  WORKTREE_PATH="$(ralph_resolve_worktree_path "$FEATURE_NAME")"
+  WORKTREE_BRANCH="$(ralph_resolve_branch_name "$FEATURE_NAME" "$BRANCH_TYPE")"
+
+  # Check if worktree path already exists
+  if [[ -d "$WORKTREE_PATH" ]]; then
+    echo "Error: Worktree path already exists: $WORKTREE_PATH"
+    exit 1
+  fi
+
+  # Check if branch already exists
+  if git show-ref --verify --quiet "refs/heads/$WORKTREE_BRANCH" 2>/dev/null; then
+    echo "Error: Branch '$WORKTREE_BRANCH' already exists"
+    exit 1
+  fi
+
+  # Create worktree base directory if needed
+  mkdir -p "$(dirname "$WORKTREE_PATH")"
+
+  # Create worktree with new branch
+  if ! git worktree add "$WORKTREE_PATH" -b "$WORKTREE_BRANCH" "$BASE_BRANCH" 2>&1; then
+    echo "Error: Failed to create worktree"
+    exit 1
+  fi
+
+  echo "Created worktree: $WORKTREE_PATH"
+  echo "Created branch: $WORKTREE_BRANCH (from $BASE_BRANCH)"
+
+  # Update project root to the worktree for feature directory creation
+  RALPH_PROJECT_ROOT="$WORKTREE_PATH"
+fi
+
+FEATURE_PATH="$RALPH_PROJECT_ROOT/$RALPH_FEATURE_DIR/$FEATURE_NAME"
 
 # Check if feature already exists
 if [[ -d "$FEATURE_PATH" ]] && [[ -n "$(ls -A "$FEATURE_PATH" 2>/dev/null)" ]]; then
@@ -63,14 +159,14 @@ echo "$DESCRIPTION" > "$FEATURE_PATH/.description"
 PROMPT_PATH="$FEATURE_PATH/$RALPH_PROMPT_FILE"
 if [[ ! -f "$PROMPT_PATH" ]]; then
   # Resolve template: custom > built-in
-  if [[ -n "$RALPH_PROMPT_TEMPLATE" ]] && [[ -f "$RALPH_PROJECT_ROOT/$RALPH_PROMPT_TEMPLATE" ]]; then
-    TEMPLATE="$RALPH_PROJECT_ROOT/$RALPH_PROMPT_TEMPLATE"
+  if [[ -n "$RALPH_PROMPT_TEMPLATE" ]] && [[ -f "$ORIGINAL_PROJECT_ROOT/$RALPH_PROMPT_TEMPLATE" ]]; then
+    TEMPLATE="$ORIGINAL_PROJECT_ROOT/$RALPH_PROMPT_TEMPLATE"
   else
     TEMPLATE="$RALPH_ROOT/templates/prompt.md.tmpl"
   fi
 
   ralph_render_template "$TEMPLATE" "$FEATURE_NAME" > "$PROMPT_PATH"
-  echo "Created $RALPH_FEATURE_DIR/$FEATURE_NAME/$RALPH_PROMPT_FILE"
+  echo "Created: $RALPH_FEATURE_DIR/$FEATURE_NAME/$RALPH_PROMPT_FILE"
 fi
 
 FEATURE_DIR_REL="$RALPH_FEATURE_DIR/$FEATURE_NAME"
@@ -113,20 +209,44 @@ echo "Created: $FEATURE_DIR_REL/"
 echo "Created: $FEATURE_DIR_REL/references/ (drop screenshots/mockups here)"
 echo ""
 
-# Clipboard
-if [[ "$NO_CLIPBOARD" != true ]]; then
-  if ralph_copy_to_clipboard "$PLANNING_PROMPT"; then
-    echo "Planning prompt copied to clipboard."
-    echo ""
+# Clipboard handling
+if [[ "$USE_WORKTREE" == true ]]; then
+  # For worktree mode, copy cd command
+  CD_COMMAND="cd $WORKTREE_PATH"
+  if [[ "$NO_CLIPBOARD" != true ]]; then
+    if ralph_copy_to_clipboard "$CD_COMMAND"; then
+      echo "cd command copied to clipboard."
+      echo ""
+    fi
   fi
-fi
 
-echo "Planning prompt:"
-echo "========================================"
-echo ""
-echo "$PLANNING_PROMPT"
-echo ""
-echo "========================================"
-echo ""
-echo "After planning is done, run:"
-echo "  ralph run $FEATURE_NAME"
+  echo "Next steps:"
+  echo "  $CD_COMMAND"
+  echo "  # Plan your feature, then:"
+  echo "  ralph run $FEATURE_NAME"
+  echo ""
+  echo "Planning prompt:"
+  echo "========================================"
+  echo ""
+  echo "$PLANNING_PROMPT"
+  echo ""
+  echo "========================================"
+else
+  # For non-worktree mode, copy planning prompt
+  if [[ "$NO_CLIPBOARD" != true ]]; then
+    if ralph_copy_to_clipboard "$PLANNING_PROMPT"; then
+      echo "Planning prompt copied to clipboard."
+      echo ""
+    fi
+  fi
+
+  echo "Planning prompt:"
+  echo "========================================"
+  echo ""
+  echo "$PLANNING_PROMPT"
+  echo ""
+  echo "========================================"
+  echo ""
+  echo "After planning is done, run:"
+  echo "  ralph run $FEATURE_NAME"
+fi

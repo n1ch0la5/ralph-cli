@@ -70,7 +70,25 @@ Create a new feature directory with `prompt.md` and a `references/` folder. Outp
 
 ```bash
 ralph new [name] [--description "..."] [--no-clipboard]
+ralph new [name] --worktree [--base <branch>] [--type <prefix>]
 ```
+
+**Worktree mode** (`--worktree`) creates the feature in an isolated git worktree, keeping your main branch clean:
+
+- `--worktree` — create feature in a new git worktree
+- `--base <branch>` — base branch for the worktree (default: auto-detect main/master)
+- `--type <prefix>` — branch prefix: `feat`, `fix`, `chore`, `hotfix`, `release` (default: `feat`)
+
+```bash
+# Creates worktree at ../worktrees/my-project/auth-flow
+# with branch feat/auth-flow
+ralph new auth-flow --worktree
+
+# Create a bugfix worktree from develop branch
+ralph new header-bug --worktree --type fix --base develop
+```
+
+The worktree path is copied to clipboard. cd into it and continue with planning.
 
 ### `ralph run`
 
@@ -98,6 +116,26 @@ Regenerate the planning prompt for an existing feature (useful if you lost it).
 
 ```bash
 ralph plan <feature> [--clipboard]
+```
+
+### `ralph worktree delete`
+
+Remove a feature worktree created with `ralph new --worktree`.
+
+```bash
+ralph worktree delete <feature> [--with-branch] [--force] [--dry-run]
+```
+
+- `--with-branch` — also delete the local git branch
+- `--force` — remove even if there are uncommitted changes
+- `--dry-run` — show what would be removed without doing it
+
+```bash
+# Preview what would be removed
+ralph worktree delete auth-flow --dry-run --with-branch
+
+# Remove worktree and branch
+ralph worktree delete auth-flow --with-branch
 ```
 
 ## Configuration
@@ -131,6 +169,9 @@ RALPH_PROMPT_TEMPLATE=""
 
 # MCP server config (for project-specific MCP servers)
 RALPH_MCP_CONFIG=".mcp.json"
+
+# Base directory for worktrees (relative to project root or absolute)
+RALPH_WORKTREE_BASE="../worktrees"
 ```
 
 See `.ralphrc.example` for all options with descriptions.
