@@ -34,6 +34,7 @@ git push origin v0.X.Y
 
 The tap lives at: https://github.com/n1ch0la5/homebrew-tap
 Local checkout: `/opt/homebrew/Library/Taps/n1ch0la5/homebrew-tap`
+Remote is SSH (`git@github.com:n1ch0la5/homebrew-tap.git`).
 
 First, get the sha256 of the new tag's tarball:
 
