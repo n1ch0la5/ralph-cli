@@ -224,6 +224,13 @@ if [[ "$USE_WORKTREE" == true ]]; then
   echo "  $CD_COMMAND"
   echo "  # Plan your feature, then:"
   echo "  ralph run $FEATURE_NAME"
+  echo ""
+  echo "Planning prompt:"
+  echo "========================================"
+  echo ""
+  echo "$PLANNING_PROMPT"
+  echo ""
+  echo "========================================"
 else
   # For non-worktree mode, copy planning prompt
   if [[ "$NO_CLIPBOARD" != true ]]; then

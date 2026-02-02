@@ -28,10 +28,11 @@ EOF
 }
 
 # Find project root by walking up from cwd looking for .ralphrc or .git
+# Note: .git is a directory in normal repos, but a file in worktrees
 ralph_find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/.ralphrc" ]] || [[ -d "$dir/.git" ]]; then
+    if [[ -f "$dir/.ralphrc" ]] || [[ -d "$dir/.git" ]] || [[ -f "$dir/.git" ]]; then
       echo "$dir"
       return 0
     fi
