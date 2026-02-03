@@ -207,6 +207,9 @@ RALPH_CODE_REVIEW_ROLE="Senior Laravel Engineer"
 
 # Code review: additional criteria (added to standard review)
 RALPH_CODE_REVIEW_CRITERIA="accessibility,i18n"
+
+# Code review: max diff size in KB before warning (default: 100)
+RALPH_CODE_REVIEW_MAX_DIFF_KB=100
 ```
 
 See `.ralphrc.example` for all options with descriptions.

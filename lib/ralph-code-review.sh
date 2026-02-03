@@ -40,7 +40,7 @@ Examples:
 EOF
       exit 0 ;;
     -*)
-      echo "Unknown option: $1"
+      echo "Unknown option: $1" >&2
       exit 1 ;;
     *)
       FEATURE="$1"
@@ -50,10 +50,10 @@ done
 
 # Validate feature is provided (unless status mode without feature)
 if [[ -z "$FEATURE" ]]; then
-  echo "Usage: ralph code-review <feature> [--role <persona>] [--async]"
-  echo "       ralph code-review --status <feature>"
-  echo ""
-  echo "Run 'ralph code-review --help' for more information."
+  echo "Usage: ralph code-review <feature> [--role <persona>] [--async]" >&2
+  echo "       ralph code-review --status <feature>" >&2
+  echo "" >&2
+  echo "Run 'ralph code-review --help' for more information." >&2
   exit 1
 fi
 
@@ -69,10 +69,10 @@ fi
 
 # Validate feature directory exists
 if [[ ! -d "$FEATURE_PATH" ]]; then
-  echo "Error: Feature '$FEATURE' not found."
-  echo "Expected directory: $FEATURE_PATH"
-  echo ""
-  echo "Run 'ralph new $FEATURE' first to create the feature."
+  echo "Error: Feature '$FEATURE' not found." >&2
+  echo "Expected directory: $FEATURE_PATH" >&2
+  echo "" >&2
+  echo "Run 'ralph new $FEATURE' first to create the feature." >&2
   exit 1
 fi
 
@@ -87,8 +87,8 @@ PID_FILE="$FEATURE_PATH/.code-review.pid"
 if [[ -f "$PID_FILE" ]]; then
   EXISTING_PID=$(cat "$PID_FILE")
   if kill -0 "$EXISTING_PID" 2>/dev/null; then
-    echo "Error: Review already in progress for '$FEATURE'."
-    echo "Use 'ralph code-review --status $FEATURE' to check progress."
+    echo "Error: Review already in progress for '$FEATURE'." >&2
+    echo "Use 'ralph code-review --status $FEATURE' to check progress." >&2
     exit 1
   else
     # Stale PID file, clean it up
@@ -99,8 +99,8 @@ fi
 # Determine base branch for diff
 BASE_BRANCH=$(ralph_get_feature_base_branch)
 if [[ -z "$BASE_BRANCH" ]]; then
-  echo "Error: Cannot determine base branch for comparison."
-  echo "Ensure 'main' or 'master' branch exists, or configure git remote."
+  echo "Error: Cannot determine base branch for comparison." >&2
+  echo "Ensure 'main' or 'master' branch exists, or configure git remote." >&2
   exit 1
 fi
 
@@ -109,6 +109,18 @@ DIFF_OUTPUT=$(git diff "$BASE_BRANCH"...HEAD 2>/dev/null)
 if [[ -z "$DIFF_OUTPUT" ]]; then
   echo "No changes found since base branch '$BASE_BRANCH'. Nothing to review."
   exit 0
+fi
+
+# Check diff size and warn if large
+DIFF_SIZE=${#DIFF_OUTPUT}
+DIFF_SIZE_KB=$((DIFF_SIZE / 1024))
+MAX_DIFF_KB="${RALPH_CODE_REVIEW_MAX_DIFF_KB:-100}"
+
+if [[ $DIFF_SIZE_KB -gt $MAX_DIFF_KB ]]; then
+  echo "Warning: Diff is ${DIFF_SIZE_KB}KB (threshold: ${MAX_DIFF_KB}KB)" >&2
+  echo "Large diffs may exceed context limits or produce incomplete reviews." >&2
+  echo "Consider reviewing specific files or commits instead." >&2
+  echo "" >&2
 fi
 
 # Count files changed
