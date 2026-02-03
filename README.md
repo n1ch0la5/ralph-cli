@@ -118,6 +118,35 @@ Regenerate the planning prompt for an existing feature (useful if you lost it).
 ralph plan <feature> [--clipboard]
 ```
 
+### `ralph code-review`
+
+Perform an AI-powered code review of all changes in a feature branch. Diffs the current branch against the base and sends the changes to Claude for analysis.
+
+```bash
+ralph code-review <feature> [--role <persona>] [--async] [--status]
+```
+
+- `--role <persona>` — explicit reviewer persona (e.g., "Senior Laravel Engineer")
+- `--async` — run review in background, return immediately
+- `--status` — check progress of an async review
+
+The reviewer role is auto-detected from the codebase:
+- Analyzes diff file extensions to determine dominant language
+- Falls back to framework markers (composer.json, package.json, etc.)
+- Supports PHP/Laravel, Python, TypeScript, JavaScript, Go, Rust, Ruby, Java
+
+```bash
+# Review a feature branch
+ralph code-review my-feature
+
+# Specify reviewer expertise
+ralph code-review my-feature --role "Senior Laravel Engineer"
+
+# Run in background and check status later
+ralph code-review my-feature --async
+ralph code-review --status my-feature
+```
+
 ### `ralph worktree delete`
 
 Remove a feature worktree created with `ralph new --worktree`.
@@ -172,6 +201,12 @@ RALPH_MCP_CONFIG=".mcp.json"
 
 # Base directory for worktrees (relative to project root or absolute)
 RALPH_WORKTREE_BASE="../worktrees"
+
+# Code review: override auto-detected reviewer role
+RALPH_CODE_REVIEW_ROLE="Senior Laravel Engineer"
+
+# Code review: additional criteria (added to standard review)
+RALPH_CODE_REVIEW_CRITERIA="accessibility,i18n"
 ```
 
 See `.ralphrc.example` for all options with descriptions.
