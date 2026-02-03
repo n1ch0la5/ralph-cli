@@ -135,7 +135,6 @@ fi
 EXTRA_CRITERIA="${RALPH_CODE_REVIEW_CRITERIA:-}"
 
 # Build the review prompt
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 REVIEW_PROMPT=$(ralph_build_code_review_prompt "$ROLE" "$DIFF_OUTPUT" "$SPEC_CONTENT" "$EXTRA_CRITERIA" "$BASE_BRANCH" "$FILES_CHANGED")
 
 # Execute review (async or sync)

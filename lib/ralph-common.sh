@@ -540,10 +540,12 @@ ralph_code_review_async() {
     local temp_output
     temp_output=$(mktemp)
 
-    if claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
+    claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
       ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
-      ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} > "$temp_output" 2>&1; then
+      ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} > "$temp_output" 2>&1
+    local claude_exit_code=$?
 
+    if [[ $claude_exit_code -eq 0 ]]; then
       # Build the review section
       local review_section="## Code Review — $review_timestamp
 
@@ -569,7 +571,7 @@ $(cat "$temp_output")
       cat "$temp_output" >> "$log_file"
     else
       echo "Review failed at $(date '+%Y-%m-%d %H:%M:%S')" > "$log_file"
-      echo "Exit code: $?" >> "$log_file"
+      echo "Exit code: $claude_exit_code" >> "$log_file"
       echo "" >> "$log_file"
       cat "$temp_output" >> "$log_file"
     fi
