@@ -14,6 +14,10 @@ Usage:
   ralph run <feature>           Execute the iterative Claude loop
   ralph status [feature]        Show progress for one or all features
   ralph plan <feature>          Regenerate the planning prompt
+  ralph code-review <feature>   Perform AI-powered code review
+    --role <persona>            Explicit reviewer persona (e.g., "Senior Laravel Engineer")
+    --async                     Run review in background, return immediately
+    --status                    Check status of async review for specified feature
   ralph worktree delete <name>  Remove a feature worktree
     --with-branch               Also delete the local git branch
     --force                     Remove even with uncommitted changes
@@ -264,6 +268,26 @@ ralph_find_worktree_branch() {
     /^worktree / { current_path = substr($0, 10) }
     /^branch / && current_path == path { print substr($0, 8); exit }
   ' | sed 's@^refs/heads/@@'
+}
+
+# Find the main repo root when in a worktree
+# Returns the main repo root if in a worktree, otherwise returns the project root
+ralph_find_main_repo_root() {
+  local git_dir="$PWD/.git"
+
+  # Check if .git is a file (worktree) rather than a directory (main repo)
+  if [[ -f "$git_dir" ]]; then
+    # .git file contains: gitdir: /path/to/main/.git/worktrees/name
+    local gitdir
+    gitdir=$(cat "$git_dir" | sed 's/^gitdir: //')
+    # Extract main repo .git path: /path/to/main/.git/worktrees/name -> /path/to/main/.git
+    local main_git="${gitdir%/worktrees/*}"
+    # Return the repo root (parent of .git)
+    echo "${main_git%/.git}"
+  else
+    # Not a worktree, return project root
+    echo "$RALPH_PROJECT_ROOT"
+  fi
 }
 
 # Detect reviewer role based on codebase technology stack

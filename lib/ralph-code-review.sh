@@ -57,7 +57,10 @@ if [[ -z "$FEATURE" ]]; then
   exit 1
 fi
 
-FEATURE_PATH="$(ralph_feature_path "$FEATURE")"
+# Resolve feature path - use main repo root when in a worktree
+# so feature planning directory is found in the main repo
+MAIN_REPO_ROOT="$(ralph_find_main_repo_root)"
+FEATURE_PATH="$MAIN_REPO_ROOT/$RALPH_FEATURE_DIR/$FEATURE"
 
 # Validate feature directory exists
 if [[ ! -d "$FEATURE_PATH" ]]; then
