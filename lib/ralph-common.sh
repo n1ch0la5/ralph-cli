@@ -603,7 +603,8 @@ ralph_code_review_status() {
     if kill -0 "$pid" 2>/dev/null; then
       # Process is still running
       local start_time
-      start_time=$(stat -f %B "$pid_file" 2>/dev/null || stat -c %Y "$pid_file" 2>/dev/null)
+      # Use modification time: %m on BSD/macOS, %Y on GNU/Linux
+      start_time=$(stat -f %m "$pid_file" 2>/dev/null || stat -c %Y "$pid_file" 2>/dev/null)
       local now=$(date +%s)
       local elapsed=$((now - start_time))
       local minutes=$((elapsed / 60))
