@@ -46,3 +46,17 @@
 # Can be relative (to project root) or absolute path
 # Worktrees are created at: <base>/<repo-name>/<feature>
 # RALPH_WORKTREE_BASE="../worktrees"
+
+# Code Review Configuration
+# Default reviewer role (overrides auto-detection)
+# Example: "Senior Laravel Engineer", "Senior Python Engineer"
+# RALPH_CODE_REVIEW_ROLE=""
+
+# Additional review criteria (comma-separated)
+# These are added to the standard review criteria
+# Example: "accessibility,i18n,WCAG compliance"
+# RALPH_CODE_REVIEW_CRITERIA=""
+
+# Maximum diff size in KB before warning (default: 100)
+# Set to 0 to disable the warning
+# RALPH_CODE_REVIEW_MAX_DIFF_KB=100
