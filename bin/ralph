@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-RALPH_VERSION="0.1.3"
+RALPH_VERSION="0.1.4"
 RALPH_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 source "$RALPH_ROOT/lib/ralph-common.sh"

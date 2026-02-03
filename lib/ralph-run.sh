@@ -144,29 +144,38 @@ if [[ -f "$ACTION_ITEMS" ]] && [[ -s "$ACTION_ITEMS" ]]; then
   cat "$ACTION_ITEMS"
   echo "========================================"
 
-  # Build a clipboard-ready prompt for pasting into Claude
+  # Build a prompt for pasting into Claude
   FEATURE_DIR_REL="$RALPH_FEATURE_DIR/$FEATURE"
-  FOLLOWUP_PROMPT="I just used ralph to implement the '$FEATURE' feature. Before we continue, read these files for context:
-- $FEATURE_DIR_REL/$RALPH_SPEC_FILE (feature requirements)
-- $FEATURE_DIR_REL/$RALPH_PLAN_FILE (implementation plan — check completed vs remaining tasks)
+  FOLLOWUP_PROMPT="I just used ralph to implement the '$FEATURE' feature.
+
+Read these files to understand what was built:
+- $FEATURE_DIR_REL/$RALPH_SPEC_FILE — original requirements
+- $FEATURE_DIR_REL/$RALPH_PLAN_FILE — task list (completed items marked [x])
+- $FEATURE_DIR_REL/logs/ — output from each iteration (section-1.md, section-2.md, etc.)
 
 The following manual steps are still needed:
 
 $(cat "$ACTION_ITEMS")
 
-Help me work through these action items. For each one:
-1. Tell me exactly what to do (commands, file edits, etc.)
+For each action item:
+1. Tell me what to do (exact commands or steps)
 2. Verify it worked
-3. Flag any issues"
+3. Flag any issues
 
-  # Always save to file so it survives clipboard overwrites
+If something looks wrong in the logs or implementation, let me know before we proceed."
+
+  # Save to file for reference
   FOLLOWUP_FILE="$FEATURE_PATH/followup-prompt.md"
   echo "$FOLLOWUP_PROMPT" > "$FOLLOWUP_FILE"
 
   echo ""
-  if ralph_copy_to_clipboard "$FOLLOWUP_PROMPT"; then
-    echo "Follow-up prompt copied to clipboard — paste into Claude to work through action items."
-  fi
+  echo "Follow-up prompt:"
+  echo "========================================"
+  echo ""
+  echo "$FOLLOWUP_PROMPT"
+  echo ""
+  echo "========================================"
+  echo ""
   echo "Saved to: $RALPH_FEATURE_DIR/$FEATURE/followup-prompt.md"
 else
   echo ""

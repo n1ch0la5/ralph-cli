@@ -173,27 +173,26 @@ FEATURE_DIR_REL="$RALPH_FEATURE_DIR/$FEATURE_NAME"
 
 # Generate planning prompt
 PLANNING_PROMPT="I want to build: $DESCRIPTION
-Guide me through planning this. Ask me clarifying questions about:
-- Scope and edge cases
-- How it fits with existing patterns in this codebase
-- UI/UX details I might not have thought of
+
+Before we plan, explore the codebase to understand:
+- Existing patterns and conventions (check CLAUDE.md if it exists)
+- Related code that this feature will interact with
+- How similar features are structured
+
+Then ask me clarifying questions about scope, edge cases, and anything unclear.
 
 Once we're aligned, generate:
-1. $FEATURE_DIR_REL/$RALPH_SPEC_FILE
-2. $FEATURE_DIR_REL/$RALPH_PLAN_FILE
+1. $FEATURE_DIR_REL/$RALPH_SPEC_FILE — requirements and acceptance criteria
+2. $FEATURE_DIR_REL/$RALPH_PLAN_FILE — task list (format below)
 
-Task sizing rules:
-- Each task section = one ralph iteration = one full claude -p invocation (expensive!)
-- Fewer, bigger tasks are better than many small ones. Don't create a task for a trivial change.
-- Each task should touch multiple files or make a meaningful, testable chunk of progress
-- Group related changes together (e.g., 'add model + service + view for X' is one task, not three)
-- A single-file feature might be 1-2 tasks. A multi-system feature might be 5-10.
-- Use checkbox format within each task for sub-steps:
-
+Task format:
 ## Task 1: Short description
 - [ ] Sub-step A
 - [ ] Sub-step B
-- [ ] Sub-step C"
+- [ ] Sub-step C
+
+Task sizing: Each task = one \`ralph run\` iteration = one full Claude session (expensive!).
+Group related changes together. A typical feature is 3-7 tasks, not 15 tiny ones."
 
 # Check for reference images
 REF_DIR="$FEATURE_PATH/references"
