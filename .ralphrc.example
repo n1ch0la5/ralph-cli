@@ -8,9 +8,17 @@
 # Tools Claude is allowed to use during execution
 # RALPH_ALLOWED_TOOLS="Edit,Write,Bash,Read,Glob,Grep"
 
+# AI Provider
+# Use --provider <name> on `ralph run` or `ralph code-review` to select a provider.
+# Valid providers: claude (default), codex
+
 # Additional flags passed to every `claude -p` invocation
 # Example: --model opus --max-budget-usd 5
 # RALPH_CLAUDE_FLAGS=""
+
+# Additional flags passed to every `codex` invocation (used when --provider codex)
+# Example: --full-auto, -s workspace-write
+# RALPH_CODEX_FLAGS=""
 
 # Permission mode for claude invocations
 # Options: acceptEdits, bypassPermissions, default, plan

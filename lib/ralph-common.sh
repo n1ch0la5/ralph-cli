@@ -11,10 +11,12 @@ Usage:
     --worktree                  Create feature in a new git worktree
     --base <branch>             Base branch for worktree (default: auto-detect)
     --type <prefix>             Branch prefix: feat, fix, chore, hotfix, release (default: feat)
-  ralph run <feature>           Execute the iterative Claude loop
+  ralph run <feature>           Execute the iterative AI loop
+    --provider <name>           AI provider: claude (default), codex
   ralph status [feature]        Show progress for one or all features
   ralph plan <feature>          Regenerate the planning prompt
   ralph code-review <feature>   Perform AI-powered code review
+    --provider <name>           AI provider: claude (default), codex
     --role <persona>            Explicit reviewer persona (e.g., "Senior Laravel Engineer")
     --async                     Run review in background, return immediately
     --status                    Check status of async review for specified feature

@@ -31,6 +31,7 @@ Usage: ralph code-review <feature> [options]
 Perform an automated code review of all changes in a feature branch.
 
 Options:
+  --provider <name>   AI provider to use: claude (default), codex
   --role <persona>    Explicit reviewer persona (e.g., "Senior Laravel Engineer")
   --async             Run review in background, return immediately
   --status            Check status of async review for specified feature
@@ -38,6 +39,7 @@ Options:
 
 Examples:
   ralph code-review my-feature
+  ralph code-review my-feature --provider codex
   ralph code-review my-feature --role "Senior Laravel Engineer"
   ralph code-review my-feature --async
   ralph code-review --status my-feature
@@ -85,6 +87,9 @@ if [[ "$STATUS_MODE" == true ]]; then
   ralph_code_review_status "$FEATURE" "$FEATURE_PATH"
   exit $?
 fi
+
+# Validate provider
+ralph_check_provider
 
 # Check for async review already running
 PID_FILE="$FEATURE_PATH/.code-review.pid"
