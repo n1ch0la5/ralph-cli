@@ -7,10 +7,14 @@ FEATURE=""
 ROLE=""
 ASYNC_MODE=false
 STATUS_MODE=false
+RALPH_PROVIDER="${RALPH_PROVIDER:-claude}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --provider)
+      RALPH_PROVIDER="$2"
+      shift 2 ;;
     --role)
       ROLE="$2"
       shift 2 ;;

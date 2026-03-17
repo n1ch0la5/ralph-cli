@@ -107,6 +107,24 @@ ralph_invoke_provider() {
   esac
 }
 
+# Invoke a code review with the active provider
+ralph_invoke_review() {
+  local prompt="$1"
+  local base_branch="$2"
+  local provider="${RALPH_PROVIDER:-claude}"
+
+  case "$provider" in
+    claude)
+      claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
+        ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
+        ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"}
+      ;;
+    codex)
+      codex review --base "$base_branch" $RALPH_CODEX_FLAGS
+      ;;
+  esac
+}
+
 # Resolve absolute path to a feature directory
 ralph_feature_path() {
   local feature="$1"
@@ -506,21 +524,20 @@ ralph_code_review_sync() {
 
   echo "Ralph v$RALPH_VERSION — Code Review"
   echo "Feature: $feature"
+  echo "Provider: $RALPH_PROVIDER"
   echo "Reviewer: $role"
   echo "Base branch: $base_branch"
   echo "Files changed: $files_changed"
   echo ""
-  echo "Starting review..."
+  echo "Starting ${RALPH_PROVIDER} review..."
   echo ""
 
-  # Create temp file for claude output
+  # Create temp file for provider output
   local temp_output
   temp_output=$(mktemp)
 
-  # Execute claude and capture output
-  if claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
-    ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
-    ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} > "$temp_output" 2>&1; then
+  # Execute review via provider and capture output
+  if ralph_invoke_review "$prompt" "$base_branch" > "$temp_output" 2>&1; then
 
     # Build the review section
     local review_section="## Code Review — $timestamp
@@ -578,6 +595,7 @@ ralph_code_review_async() {
 
   echo "Ralph v$RALPH_VERSION — Code Review (Async)"
   echo "Feature: $feature"
+  echo "Provider: $RALPH_PROVIDER"
   echo "Reviewer: $role"
   echo "Base branch: $base_branch"
   echo "Files changed: $files_changed"
@@ -587,16 +605,14 @@ ralph_code_review_async() {
   (
     local review_timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-    # Execute claude and capture output
+    # Execute review via provider and capture output
     local temp_output
     temp_output=$(mktemp)
 
-    claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
-      ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
-      ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} > "$temp_output" 2>&1
-    local claude_exit_code=$?
+    ralph_invoke_review "$prompt" "$base_branch" > "$temp_output" 2>&1
+    local review_exit_code=$?
 
-    if [[ $claude_exit_code -eq 0 ]]; then
+    if [[ $review_exit_code -eq 0 ]]; then
       # Build the review section
       local review_section="## Code Review — $review_timestamp
 
@@ -622,7 +638,7 @@ $(cat "$temp_output")
       cat "$temp_output" >> "$log_file"
     else
       echo "Review failed at $(date '+%Y-%m-%d %H:%M:%S')" > "$log_file"
-      echo "Exit code: $claude_exit_code" >> "$log_file"
+      echo "Exit code: $review_exit_code" >> "$log_file"
       echo "" >> "$log_file"
       cat "$temp_output" >> "$log_file"
     fi
