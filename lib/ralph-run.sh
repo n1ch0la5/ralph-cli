@@ -7,10 +7,14 @@ FEATURE=""
 MAX_ITER=""
 DRY_RUN=false
 NO_SLEEP=false
+RALPH_PROVIDER="${RALPH_PROVIDER:-claude}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --provider)
+      RALPH_PROVIDER="$2"
+      shift 2 ;;
     --max-iterations)
       MAX_ITER="$2"
       shift 2 ;;
@@ -21,7 +25,13 @@ while [[ $# -gt 0 ]]; do
       NO_SLEEP=true
       shift ;;
     --help|-h)
-      echo "Usage: ralph run <feature> [--max-iterations N] [--dry-run] [--no-sleep]"
+      echo "Usage: ralph run <feature> [--provider <name>] [--max-iterations N] [--dry-run] [--no-sleep]"
+      echo ""
+      echo "Options:"
+      echo "  --provider <name>    AI provider to use: claude (default), codex"
+      echo "  --max-iterations N   Maximum iterations before stopping"
+      echo "  --dry-run            Show what would be executed without running"
+      echo "  --no-sleep           Skip sleep between iterations"
       exit 0 ;;
     -*)
       echo "Unknown option: $1"
@@ -63,25 +73,57 @@ LOGS_DIR="$FEATURE_PATH/logs"
 ACTION_ITEMS="$FEATURE_PATH/action-items.md"
 mkdir -p "$LOGS_DIR"
 
+# Recover from interrupted runs: if a section log exists but is empty,
+# the previous run was killed before Claude finished. Uncheck that section's
+# tasks so it gets retried.
+RECOVERED=false
+for log_file in "$LOGS_DIR"/section-*.md; do
+  [[ -f "$log_file" ]] || continue
+  if [[ ! -s "$log_file" ]]; then
+    section_num=$(basename "$log_file" | sed 's/section-\([0-9]*\)\.md/\1/')
+    ralph_uncheck_section "$PLAN" "$section_num"
+    rm -f "$log_file"
+    echo "Recovered incomplete Section $section_num (empty log from interrupted run)"
+    RECOVERED=true
+  fi
+done
+
+# Recount after recovery
+if [[ "$RECOVERED" == true ]]; then
+  SECTIONS_REMAINING=$(ralph_count_sections_remaining "$PLAN")
+  SECTIONS_TOTAL=$(ralph_count_sections_total "$PLAN")
+  SECTIONS_DONE=$((SECTIONS_TOTAL - SECTIONS_REMAINING))
+  echo ""
+fi
+
 echo "Ralph v$RALPH_VERSION — running feature: $FEATURE"
 echo "Plan: $SECTIONS_DONE/$SECTIONS_TOTAL task sections completed, $SECTIONS_REMAINING remaining"
 echo "Max iterations: $MAX_ITER"
 echo ""
 
-# Build base claude command (for dry-run display)
-CLAUDE_CMD="claude -p \"...\" --allowedTools \"$RALPH_ALLOWED_TOOLS\""
-[[ -n "$RALPH_CLAUDE_FLAGS" ]] && CLAUDE_CMD+=" $RALPH_CLAUDE_FLAGS"
-[[ -n "$RALPH_PERMISSION_MODE" ]] && CLAUDE_CMD+=" --permission-mode $RALPH_PERMISSION_MODE"
-[[ -n "$RALPH_MCP_CONFIG" ]] && CLAUDE_CMD+=" --mcp-config $RALPH_MCP_CONFIG"
+# Validate provider
+ralph_check_provider
+
+# Build provider command (for dry-run display)
+if [[ "$RALPH_PROVIDER" == "claude" ]]; then
+  PROVIDER_CMD="claude -p \"...\" --allowedTools \"$RALPH_ALLOWED_TOOLS\""
+  [[ -n "$RALPH_CLAUDE_FLAGS" ]] && PROVIDER_CMD+=" $RALPH_CLAUDE_FLAGS"
+  [[ -n "$RALPH_PERMISSION_MODE" ]] && PROVIDER_CMD+=" --permission-mode $RALPH_PERMISSION_MODE"
+  [[ -n "$RALPH_MCP_CONFIG" ]] && PROVIDER_CMD+=" --mcp-config $RALPH_MCP_CONFIG"
+elif [[ "$RALPH_PROVIDER" == "codex" ]]; then
+  PROVIDER_CMD="codex exec \"...\""
+  [[ -n "$RALPH_CODEX_FLAGS" ]] && PROVIDER_CMD+=" $RALPH_CODEX_FLAGS"
+fi
 
 # Dry run — show command and exit
 if [[ "$DRY_RUN" == true ]]; then
+  echo "[dry-run] Provider: $RALPH_PROVIDER"
   echo "[dry-run] Would execute:"
-  echo "  $CLAUDE_CMD"
+  echo "  $PROVIDER_CMD"
   echo ""
   echo "Prompt file: $PROMPT"
   echo "Plan file:   $PLAN"
-  [[ -n "$RALPH_MCP_CONFIG" ]] && echo "MCP config:  $RALPH_MCP_CONFIG"
+  [[ "$RALPH_PROVIDER" == "claude" ]] && [[ -n "$RALPH_MCP_CONFIG" ]] && echo "MCP config:  $RALPH_MCP_CONFIG"
   exit 0
 fi
 
@@ -101,19 +143,32 @@ for ((i=1; i<=MAX_ITER; i++)); do
   LOG_FILE="$LOGS_DIR/section-${CURRENT_SECTION}.md"
 
   echo "=== Iteration $i — Section $CURRENT_SECTION/$SECTIONS_TOTAL — $SECTIONS_REMAINING remaining ==="
+  echo "Starting ${RALPH_PROVIDER}..."
 
-  # Execute claude (re-read prompt each time so mid-run edits take effect)
+  # Execute provider (re-read prompt each time so mid-run edits take effect)
   # Output is tee'd to a log file for later reference
-  claude -p "$(cat "$PROMPT")" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
-    ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
-    ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"} \
-    | tee "$LOG_FILE"
+  # stderr is merged so errors are captured in both terminal and log
+  START_TIME=$(date +%s)
+  ralph_invoke_provider "$(cat "$PROMPT")" 2>&1 | tee "$LOG_FILE"
   EXIT_CODE=${PIPESTATUS[0]}
+  ELAPSED=$(( $(date +%s) - START_TIME ))
+  ELAPSED_MIN=$((ELAPSED / 60))
+  ELAPSED_SEC=$((ELAPSED % 60))
 
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo ""
-    echo "Claude exited with code $EXIT_CODE"
+    echo "${RALPH_PROVIDER} exited with code $EXIT_CODE after ${ELAPSED_MIN}m ${ELAPSED_SEC}s"
+    if [[ ! -s "$LOG_FILE" ]]; then
+      echo "No output was produced. Check your API key, network connection, or run '${RALPH_PROVIDER} --help' to debug."
+    fi
     exit 1
+  fi
+
+  echo ""
+  echo "--- Section $CURRENT_SECTION completed in ${ELAPSED_MIN}m ${ELAPSED_SEC}s ---"
+
+  if [[ ! -s "$LOG_FILE" ]]; then
+    echo "Warning: ${RALPH_PROVIDER} produced no output for Section $CURRENT_SECTION"
   fi
 
   if [[ "$NO_SLEEP" != true ]]; then

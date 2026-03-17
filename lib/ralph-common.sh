@@ -50,6 +50,7 @@ ralph_load_config() {
   RALPH_FEATURE_DIR="Planning/features"
   RALPH_ALLOWED_TOOLS="Edit,Write,Bash,Read,Glob,Grep"
   RALPH_CLAUDE_FLAGS=""
+  RALPH_CODEX_FLAGS=""
   RALPH_PERMISSION_MODE=""
   RALPH_MAX_ITERATIONS=20
   RALPH_SLEEP_SECONDS=2
@@ -67,6 +68,43 @@ ralph_load_config() {
   if [[ -f "$RALPH_PROJECT_ROOT/.ralphrc" ]]; then
     source "$RALPH_PROJECT_ROOT/.ralphrc"
   fi
+}
+
+# Validate provider name and check that its CLI binary is installed
+ralph_check_provider() {
+  local provider="${RALPH_PROVIDER:-claude}"
+
+  case "$provider" in
+    claude|codex) ;;
+    *)
+      echo "Error: Unknown provider '$provider'." >&2
+      echo "Valid providers: claude, codex" >&2
+      exit 1
+      ;;
+  esac
+
+  local binary="$provider"
+  if ! command -v "$binary" &>/dev/null; then
+    echo "Error: Provider '$provider' requires '$binary' to be installed, but it was not found in PATH." >&2
+    exit 1
+  fi
+}
+
+# Invoke the active provider with a prompt, streaming output to stdout
+ralph_invoke_provider() {
+  local prompt="$1"
+  local provider="${RALPH_PROVIDER:-claude}"
+
+  case "$provider" in
+    claude)
+      claude -p "$prompt" --allowedTools "$RALPH_ALLOWED_TOOLS" $RALPH_CLAUDE_FLAGS \
+        ${RALPH_PERMISSION_MODE:+--permission-mode "$RALPH_PERMISSION_MODE"} \
+        ${RALPH_MCP_CONFIG:+--mcp-config "$RALPH_MCP_CONFIG"}
+      ;;
+    codex)
+      codex exec "$prompt" $RALPH_CODEX_FLAGS
+      ;;
+  esac
 }
 
 # Resolve absolute path to a feature directory
@@ -131,6 +169,19 @@ ralph_count_sections_total() {
   local count
   count=$(grep -c "^## Task" "$1" 2>/dev/null) || true
   echo "${count:-0}"
+}
+
+# Uncheck all completed checkboxes in a specific task section (by section number)
+# Used to recover from interrupted runs where the log is empty but checkboxes were marked
+ralph_uncheck_section() {
+  local plan="$1"
+  local section_num="$2"
+
+  awk -v n="$section_num" '
+    /^## Task/ { task_count++ }
+    task_count == n && /^- \[x\]/ { sub(/- \[x\]/, "- [ ]") }
+    { print }
+  ' "$plan" > "${plan}.tmp" && mv "${plan}.tmp" "$plan"
 }
 
 # Render a template by substituting {{VAR}} placeholders

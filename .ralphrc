@@ -1,0 +1,32 @@
+# .ralphrc — Ralph configuration
+# All values are optional. Uncomment and edit to override defaults.
+
+# Directory where feature plans are stored (relative to project root)
+# RALPH_FEATURE_DIR="Planning/features"
+
+# Tools Claude is allowed to use during execution
+# RALPH_ALLOWED_TOOLS="Edit,Write,Bash,Read,Glob,Grep"
+
+# Additional flags passed to every `claude -p` invocation
+# Example: --model opus --max-budget-usd 5
+# RALPH_CLAUDE_FLAGS=""
+
+# Permission mode for claude invocations
+# Options: acceptEdits, bypassPermissions, default, plan
+# RALPH_PERMISSION_MODE=""
+
+# Maximum iterations before ralph gives up
+# RALPH_MAX_ITERATIONS=20
+
+# Seconds to sleep between iterations
+# RALPH_SLEEP_SECONDS=2
+
+# Whether prompts should include git commit instructions
+# RALPH_GIT_COMMIT=true
+
+# Git commit message prefix ({{FEATURE}} is replaced with feature name)
+# RALPH_COMMIT_PREFIX="[{{FEATURE}}]"
+
+# Path to a custom prompt template (relative to project root)
+# If empty, uses ralph's built-in default template
+# RALPH_PROMPT_TEMPLATE=""
